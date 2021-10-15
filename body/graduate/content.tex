@@ -166,12 +166,252 @@ VSLink通过对象的位置和外观信息识别对象。这意味着，当物�
         \label{fig:localization}
     \end{figure}
 \section{基于Visual SLAM的目标识别}
-SLAM被认为是实现更真实AR体验的关键技术之一，因为它提供了对环境的理解和跟踪。在VSLink中，我们建议建立一个终身对象级SLAM映射，这有利于SLAM跟踪和对象识别。
+SLAM被认为是实现更真实AR体验的关键技术之一，因为它提供了对环境的理解和跟踪。在VSLink中，我们建立了一个终身对象级SLAM映射，这有利于SLAM跟踪和对象识别。
 
-1） 工作流：在这里，我们解释了所提出的基于Visual SLAM的对象识别解决方案的理论。由于经典的VS-LAM[18]，[19]技术试图在机器人第一次进入环境时实现精确的映射和定位，我们想知道机器人第二次进入环境时是否能够识别它所看到的物体。
+\subsection{\textbf{工作流}}
+在这里，我们解释了所提出的基于Visual SLAM的对象识别解决方案的理论。由于经典的Visual SLAM\cite{mur2017orb,engel2014lsd}技术试图在机器人第一次进入环境时实现精确的映射和定位，我们想知道机器人第二次进入环境时是否能够识别它所看到的物体。
 
-构建的SLAM地图[18]仅包括某些地图点和关键帧，地图重用过程如图3所示。定位过程首先使用单词包（BoW）[20]计算当前帧的表示，然后计算当前帧和关键帧之间的BoW相似性。然后，它选择具有高弓相似性的关键帧作为候选帧。最后，对于每个选定的关键帧，它使用RANSAC[21]算法计算当前帧中的特征点与该关键帧的贴图点之间的2D-3D投影。如果投影误差小于阈值，则定位完成。
+构建的SLAM地图\cite{mur2017orb}仅包括某些地图点和关键帧，地图重用过程如图3所示。定位过程首先使用单词包（BoW）\cite{galvez2012bags}计算当前帧的表示，然后计算当前帧和关键帧之间的BoW相似性。然后，它选择具有高弓相似性的关键帧作为候选帧。最后，对于每个选定的关键帧，它使用RANSAC\cite{derpanis2010overview}算法计算当前帧中的特征点与该关键帧的贴图点之间的2D-3D投影。如果投影误差小于阈值，则定位完成。
 
+我们注意到，上述过程的实质是在地图点$mp = [x_m,y_m,z_m,\vec{orb}]$（在重用的地图中）和特征点$fp = [x_f,y_f,\vec{orb}]$（在当前框架中）之间建立投影，其中下标$m$和$f$表示地图坐标系和框架坐标系。
+因此，如果我们给$mp$一个表示对象ID的标签，并且在本地化期间将该$mp$投影到某个$fp$，则相应的对象将在当前帧中本地化。
+与原始VSLAM相比，在标记贴图点后，我们能够在不引入额外计算的情况下识别环境中的对象。
+请注意，此方法不只是记住对象的位置，当对象相对于其在地图上的位置移动时，可能会导致误报检测。
+ORB特征用于建立2D-3D投影，这意味着SLAM在环境中定位自身后，当某些特征点可见时，它会识别到对象。
+虽然不常见，但是我们也考虑了稳定物体移动的情况，我们使用了逐对象投影算法来检测这种运动并更新地图。
+
+
+\begin{figure}[t]
+	\centering
+	\includegraphics[width=0.99\linewidth]{offlinemap}
+	\caption{Object-level map building workflow.}
+	\label{fig:offlinemap}
+\end{figure}
+
+\subsection{\textbf{对象级地图}}\label{subsec:map}
+为了实现基于VSLAM的对象识别，我们需要用相应的对象ID标记映射点。因此，我们称之为对象级映射。
+
+最近，语义SLAM~\cite{bowman2017probabilistic,kaneko2018mask}和对象级SLAM~\cite{mccormac2018fusion++,strecke2019fusion}已被研究并显示出巨大的潜力。典型的用法是同时运行SLAM过程和语义分割神经网络，并使用分割结果来细化构建的地图。
+
+图\ref{fig:offlinemap} 演示了构建对象级地图的工作流。
+首先，我们将视频输入原始Visual SLAM进程~\cite{mur2017orb}，并构建包含关键帧和贴图点的地图。
+我们想要确定 1）环境中的哪些对象可以被视为交互目标，2）对于每个贴图点，它链接到哪个对象。
+因此，我们使用实例分割神经网络\cite{He_2017_ICCV}来实现对输入视频的分割。对于每个检测到的对象，分割结果是像素级的二进制掩码$m$和对象类别$c$。
+现在，我们在连续的帧中获得了很多对象，但它们还没有唯一地分配ID。为了防止潜在的重复检测，我们采用对象跟踪神经网络在不同的帧中合并相同的对象。
+检测到的对象和贴图点之间的链接是像素坐标。
+在SLAM过程中，当关键帧中的贴图点可见时，我们记录其像素坐标$(x,y)$，整个记录为$\{Index_m, Index_kf, (x,y)\}$。
+对于每个关键帧的每个地图点，我们检查它们的坐标。如果坐标位于该关键帧的对象掩码内，则使用相应的对象ID标记地图点。
+
+\subsection{\textbf{地图长期重用}}
+在建立上述地图之后，我们可以使用该地图来识别稳定的对象。
+如果稳定物体永远保持在同一位置，上述方法可以很好地工作。
+然而，这在实践中很难实现。
+如果稳定对象的位置与地图中记录的位置相比发生变化，我们希望主动检测此类变化并更新地图，从而使地图能够长期使用。
+
+这里我们介绍计算2D-3D投影的RANSAC\cite{derpanis2010overview}算法，并观察移动的对象如何影响该算法。
+选择具有类似BoW表示的候选关键帧后，RANSAC计算每个属于关键帧的$mp$和属于当前帧的$fp$之间的ORB特征相似性$s(ORB_{mp}, ORB_{fp})$。如果$s$低于某个阈值，$mp$和$fp$就会成功匹配，这意味着它们属于同一个物理点。
+现在，RANSAC将随机选择$n$对匹配项，并通过PnP解算器计算投影$T$
+\begin{equation}\label{equ:pnp}
+    T = PnP([mp_1, fp_1],[mp_2, fp_2], ..., [mp_n, fp_n]).
+\end{equation} 
+
+然后，用$T$检查其余匹配点对，
+\begin{equation}\label{equ:check}
+    \
+    err = T \cdot [mp_x, mp_y, mp_z] - [fp_x, fp_y],
+\end{equation} 
+其中下标$x,y$和$z$表示$mp/fp$的坐标。
+当误差小于阈值时，这对点被视为一个内点，否则它是一个离群点。
+在找到足够的内点后，$T$被视为正确的投影，并且将基于所有内点计算新的$T$。相反，如果没有找到足够的内点，RANSAC将从随机选取$n$对匹配项并从第一步开始重新启动。
+因此，如果对象移动，潜在的结果可能是1）没有足够的内点进行定位，2）内点包含属于移动对象的地图点，从而导致错误的定位和识别。
+
+我们修改了RANSAC算法，通过执行每个对象的投影来处理这样的对象移动。
+在执行PnP解算器以计算$T$之前，我们根据地图点的对象标签对其进行聚类。
+我们使用基于背景$T_{background}$的投影作为基准，因为背景通常是稳定的。
+对于每个对象$O_i$，我们使用属于$O_i$的可见贴图点来验证$T$：
+
+\begin{equation}\label{equ:gdt}
+\
+err = \Sigma \ T \cdot [mp_x, mp_y, mp_z] - [fp_x, fp_y].
+\end{equation}
+如果错误高于阈值，这意味着该对象的异常值太多，则我们确定该对象已移动。
+详细的算法在算法~\ref{alg::poa}中描述
+可以通过投影粗略估计移动，因此我们仍然可以在正确的位置显示交互UI。
+为了实现长期重用，我们需要根据\ref{subsec:map}节发送这些视频帧来更新地图。
+
+
+\begin{figure}[t]
+	\centering
+	\includegraphics[width=0.7\linewidth]{moveobj}
+	\caption{静态和动态目标的识别}
+	\label{fig:move}
+\end{figure}
+
+\begin{algorithm}[t]  
+	\caption{Per-Object-Projection }  
+	\label{alg::poa}  
+	\begin{algorithmic}[1]  
+		\Require  
+		$frame$: current video frame;
+		$FPs$: feature points of $frame$;  
+		$KFs$: keyframes of the map;  
+		$MPs$: map points of the map;
+		$OBJs$: q visible objects in $frame$;   
+		\Ensure  
+		camera pose $T_{cw}$;
+		movement of $i_{th}$ object $OM_i$;
+		\State initial $OM_i=0, i = 1,2,...,q$;
+		\State initial $S_{mp}^i=\varnothing, i=1,2,...,q$;
+		\State compute bag of words (bow) feature $bow_f$ for $frame$;
+		\State Search $KFs$ for frames that share the same word with $bow_f$, then pick the most similar keyframe $KF_{candi}$;
+		\For{each $mp\in KF_{candi}$}
+		\For{each $fp\in frame$}
+		compute the similarity $sim$ between $mp$ and $fp$;
+		\If {if $sim < thre$}
+		\State $S_{mp}^i = S_{mp}^i\cup\{(mp,fp)\}, i = mp_{label}$;
+		\EndIf
+		\EndFor 
+		\EndFor
+		\State compute camera pose $T_{cw}^{env} = PnPSolve(S_{mp}^i)$, $i$ corresponds to the ID of environment;
+		\For{each $obj\in OBJs$}
+		\For{each $mp\in S_{mp}^i$,  $i$ corresponds to $obj$ ID}
+		\State compute camera pose $T_{cw}^{i} = PnPSolve(S_{mp}^i)$;
+		\EndFor
+		\EndFor
+		\State compute and delete outlier in ${T_{cw}^{i}, i=1,2,...,q}$;
+		\State recompute camera pose $T_{cw}$ with the left $S_{mp}^i$;
+		\If {$T_{cw}^{i}$ is  outlier}
+		\State $OM_i = Move_{cal}(T_{cw}^{i}, T_{cw})$; 
+		\Else 
+		\State {$OM_i = \vec 0$};
+		\EndIf
+	\end{algorithmic}
+\end{algorithm}  
+
+\begin{figure}[t]
+	\centering
+	\begin{subfigure}{.48\linewidth}
+		\includegraphics[width=1\linewidth]{static9}
+		\caption{}
+	\end{subfigure}
+	\ 
+	%\hskip2em\
+	%\centering
+	\begin{subfigure}{.48\linewidth}
+		\includegraphics[width=1\linewidth]{static10}
+		\caption{}
+	\end{subfigure}
+	\caption{Network inference time cost of sub-frames. In (a) we used a $640\times 480$ frame as the base, which refers to 1 in the X axis. Then we tested the same networks with the resized frame. In (b), we let the time cost of the original frame represent 1 in the X axis, and then sliced it into multiple sub-frames. }\label{fig:subframetime}
+\end{figure}
+
+
+\begin{figure}[t]
+	\centering
+	\includegraphics[width=0.75\linewidth]{temp}
+	\caption{Workflow of the proposed inference acceleration method. The line from feature map to the gather kernel represents that computation of the next layer follows the similar flow.}
+	\label{fig:sparse-conv}
+\end{figure}
+
+
+\subsection{基于稀疏推理的网络加速}\label{sub:Sparse Object Detection}
+In Section~\ref{subsec:vslam} we describe how to utilize VSLAM with a built object-level map to identify stable objects. However, we are still not able to identify the objects that usually move from one place to another.
+
+As we described in Section~\ref{subsec:motivation}, the combination of object detection neural networks and image retrieval is a feasible solution for the movable object identification.
+Object detection neural networks first generate the 2D bounding box for the detected object, and then the object is searched in the database using image retrieval to identify its ID.
+The limitation of such implementation is the time cost of neural networks. 
+Although researchers have tried to reduce the inference time of neural networks from many aspects such as network compression and  lightweight design, it is still a challenge of running object detection neural networks in real time on a mobile phone or a CPU-only edge device.
+
+\subsubsection{\textbf{Detection Prior}}
+% vslam的结果可以产生prior
+% mask的产生可以使用前面建图的mask
+% 直接依据先验来切分图片的做法结果不好 
+We accelerate the network inference based on input reduction.
+As stated in Section~\ref{subsec:vslam}, VSLAM could detect stable objects. Therefore, the neural networks do not need to  
+conduct calculations on the area which belongs to stable objects.
+
+We have considered different methods for determining the detection prior, i.e., determining the specific area that should be ignored by neural networks. 
+We could use the set of map points that belongs to a certain stable object to form the area as the prior.
+However, the prior offered by this method is not complete.
+The reason is that the detected map points do not have an optimal 
+distribution.
+During the localization of VSLAM, only a part of the feature points
+(in the current frame) can be projected to map points (in the map),
+and the distribution is random.
+Assuming we detect $N$ feature points belong to a television, it is possible that $N$ points are all concentrated in one corner of the television.
+Incomplete prior makes neural networks have to analyze more area,
+which means imperfect acceleration.
+To acquire a precise and complete prior, we reuse the object mask
+which is generated by instance segmentation neural networks in~\ref{subsec:map}. The detection prior can be 
+calculated by 
+\begin{equation}\label{equ:mask}
+mask_c^i = Trans(Pose_c,Pose_k)mask_k^i.
+\end{equation} 
+$mask_c^i$ represent the binary mask of object $i$ in the current frame, which is our prior. $mask_k^i$ is the binary mask in the most relevant keyframe for object $i$. $Trans(Pose_c,Pose_k)$ calculates the camera pose transformation between the current frame and keyframe.
+
+With the detection prior, a direct solution for input reduction is 
+dividing the original frame into multiple sub-frames and then inferencing on them separately.
+However, the experiments show that this implementation brings close and usually more time cost than processing the original frame. 
+The reason is that this "divide \& inference" implementation reduces the parallelism of calculations. We need to process these sub-frames in a for-loop. Besides, many sub-frames of small size could not benefit from the existing GEMM optimization methods.
+From Figure~\ref{fig:subframetime}a we can see the frame size $s$ and inference time $t$ generally subject to a model $t = as + b, a>0,b >0$, which means a minimal frame will cause a fixed time cost. In our implementation, $b$ is 11ms.
+Figure~\ref{fig:subframetime}b  shows that the total time cost keeps increasing as we divide the frame into more and more sub-frames.
+
+ 
+\subsubsection{\textbf{Sparse Inference}}
+Sparse convolution~\cite{graham2015sparse, ren2018sbnet} has been  proposed to take advantage of the input sparsity for latency reduction.
+In VSLink, we followed the idea of~\cite{ren2018sbnet} to design object detection neural networks with sparse blocks.
+
+The key idea of this sparse convolution design~\cite{ren2018sbnet} is the introduction of a gather/scatter kernel to achieve tensor shape transformation.
+The basic workflow is as follows. 
+First, we use $h\times w$ rectangles to cover the original pixel-level binary mask, which generates a new block-level mask.
+Then, the original 4-d $N \times H \times W \times C$ frame and 2d $H/h \times W/w$ mask are sent to convolution blocks. Given $B$ blocks which are set to 1 in the mask, the scatter then slice the blocks out of the input tensor using $h\times w \times C$ slices,  and stack the B slices into a new tensor
+along the batch dimension, yielding a $B\times h \times w \times C$ tensor. After gathering, the tensor can be sent to normal  convolution blocks.
+After convolution computation, the result needs to be reshaped to form the feature map, which is achieved by the scatter kernel. 
+The scattering process is the inversion to gather, we pick the $h\times w \times C$ slices of convolution results into the feature map according to the binary mask. The diagram of the entire inference acceleration is displayed in Fig~\ref{fig:sparse-conv}.
+
+
+
+\subsubsection{\textbf{Identification \& tracking}}
+If an objects is detected by neural networks, we identify its object ID via image retrieval. The retrieval is based on deep convolution features.
+During the process of build the map which is stated in Section~\ref{subsec:map}, we extracted and saved deep convolution features of detected movable objects using the same backbone that the object detection neural networks use. 
+During image retrieval, for every detected object, we compare its features with the stored ones in the database. If feature similarity reaches a threshold, we identify the object.
+
+The movable object tracking is achieved by feature points tracking, which is similar to the tracking of stable objects.
+We temporarily track the feature points which belong to a certain movable object as long as the feature points are visible in successive frames. 
+
+
+\begin{table}[t]
+	\centering
+	\includegraphics[width=0.98\linewidth]{functions}
+	\caption{VSLink propose function to achieve interaction with unconnectable objects.}
+	\label{table:functions}
+\end{table}
+
+\section{Customized Interaction}\label{sec:flexible}
+VSLink targets to enrich the interaction between people and objects.
+Most existing human-device interaction implementation follows a process that the programmer decides everything such as interaction targets, function and UI.
+As mentioned in Sec~\ref{sec:introduction}, VSLink broadens the concept of interaction targets by incorporating unconnectable objects, which means the user could freely determine if an object is an interaction target. 
+We want to keep the design philosophy that makes the user decide the interaction.     
+
+\subsection{Function abstraction}
+To realize interaction with different objects, VSLink needs to implement the corresponding UI.  
+However, designing the complete UI, including the functionality and appearance, for every possible object is just impossible.
+Even if the objects belong to the same category, a slight difference will make the interaction different.
+For example, compared with an ordinary lamp, a smart LED light has more functions such as color and blink adjustment.
+Therefore, VSLink extracts and abstracts the \textit{minimal functional unit} of objects and designs UI based on such abstraction.
+For the connectable object, the minimal functional units have been defined by the manufacturer and we only need to follow its interface.
+Considering the unconnectable objects, which do not have a pre-defined interface to be followed, we proposed three types of functions to realize interaction.
+These functions are based on the mobile phone functions, which we think could help the human-object interaction. 
+% Event Recording
+% Communication
+% Information Display
+% 
+ 
+\subsection{User-oriented UI design}
+Acquiring a set of minimal functional units, the user could design the complete UI according to personal needs.
+VSLink uses a web-based UI design framework, where the user could adjust the appearance, layout and logics of the object UI.
+The whole design process is no-code, which only requires dragging and tapping operations.
+To reduce the burden of users during designing UIs, we encourage the way of starting from a UI template.
+We offer multiple representative UI templates. According to the object category, The user is suggested to choose a certain template and start a customized UI design. 
 
 \chapter{参考命令}
 \section{节标题}
