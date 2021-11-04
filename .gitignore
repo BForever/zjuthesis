@@ -257,3 +257,8 @@ TSWLatexianTemp*
 ### VisualStudioCode ###
 .vscode/*
 .history
+
+### Mac FileSystem
+.DS_Store
+figure/.DS_Store
+.terminalname
