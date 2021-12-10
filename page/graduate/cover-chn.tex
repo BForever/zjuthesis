@@ -37,16 +37,16 @@
     \includegraphics[width=0.14\paperwidth]{logo/zju.pdf}
 \end{center}
 
-\ifthenelse{\equal{\DepartmentLines}{1}}
-{
-    %   DepartmentLines == 1
-    \vskip 20pt
-}
-{
-    %   DepartmentLines == 2
-    \vskip 10pt
-}
-
+% \ifthenelse{\equal{\DepartmentLines}{1}}
+% {
+%     %   DepartmentLines == 1
+%     \vskip 20pt
+% }
+% {
+%     %   DepartmentLines == 2
+%     \vskip 10pt
+% }
+\vskip 10pt
 % Define multi line title
 
 
@@ -68,29 +68,35 @@
             ~            & \uline{\hfill \fangsong \TitleLineTwo{} \hfill} \\
         }
 
-        \ifthenelse{\equal{\TitleEngLines}{1}}
-        {
-            % TitleEngLines == 1
-            英文论文题目：&  \uline{\hfill \TitleEng{} \hfill} \\
-            ~ & \uline{\hfill} \\
-        }
-        {
-            % TitleEngLines == 2
-            英文论文题目：&  \uline{\hfill \TitleEngLineOne{} \hfill} \\
-            ~            & \uline{\hfill \TitleEngLineTwo{} \hfill} \\
-        }
+        %   
+        英文论文题目：&  \uline{\hfill Research and implementation of physi-  \hfill} \\
+        ~            & \uline{\hfill cal object visual interaction technology \hfill} \\
+        ~            & \uline{\hfill  based on object model and VSLAM \hfill} \\
+
+        % \ifthenelse{\equal{\TitleEngLines}{1}}
+        % {
+        %     % TitleEngLines == 1
+        %     英文论文题目：&  \uline{\hfill \TitleEng{} \hfill} \\
+        %     ~ & \uline{\hfill} \\
+        % }
+        % {
+        %     % TitleEngLines == 2
+        %     英文论文题目：&  \uline{\hfill \TitleEngLineOne{} \hfill} \\
+        %     ~            & \uline{\hfill \TitleEngLineTwo{} \hfill} \\
+        % }
     \end{tabularx}
 \end{center}
 
-\ifthenelse{\equal{\DepartmentLines}{1}}
-{
-    %   DepartmentLines == 1
-    \vskip 20pt
-}
-{
-    %   DepartmentLines == 2
-    \vskip 10pt
-}
+% \ifthenelse{\equal{\DepartmentLines}{1}}
+% {
+%     %   DepartmentLines == 1
+%     \vskip 20pt
+% }
+% {
+%     %   DepartmentLines == 2
+%     
+% }
+\vskip 10pt
 
 \begin{center}
     \zihao{4}

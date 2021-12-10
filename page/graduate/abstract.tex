@@ -1,49 +1,26 @@
 \cleardoublepage
 \chapternonum{摘要}
-% 随着物联网的快速发展，人们现在被大量的设备所包围，据相关机构预测，2025年全世界将安装820亿台物联网设备，因此，人们有越来越多的机会与这些设备进行交互。与此同时，人机交互技术也在不断发展，朝着融合物理空间和网络空间的方向发展。手势识别、语音识别、蓝牙、UWB等技术都被用于提高人机交互体验，然而，所见即所得仍然不失为最直观的交互方式，增强现实可以直观地将物理空间和网络空间建立起连接，为用户提供直接的交互。
-
-% 人均，交互方式而不是技术，（1）现有的不行 （2）现有的效率、统一等
-% 提出新的，达到什么效果，为什么，挑战，怎么解决
-% 怎么评估，效果
-% 格局大点
-% 每句讲清楚
-% 边缘计算，给出具体场景（延迟），提出要求，引出来，不能突兀；不应该提平台，而是提技术
-% 系统实现与评估
 随着物联网产业的快速发展，越来越多的设备出现在人们身边，据相关机构预测，2025年全世界将安装820亿台物联网设备，人均将拥有十台以上的设备，因此人们将会越来越多地与各类设备进行交互。与此同时，现有的主流人机交互方式如手机APP、智能音箱等均不能实现所见即所得的人机交互，物理空间与网络空间仍然一分为二，用户不能像操控实体控制面板一样实现一对一的设备交互。
 
 增强现实技术可以很好地融合物理空间与网络空间，增强用户的交互体验。目前的增强现实技术在在对象的定位和渲染方面有了长足的进步，然而在实际的应用中还需要解决很多挑战，在性能方面，增强现实技术要求很强的计算能力，高延迟问题有待解决；在实用性方面，需要实现地图的长期可用性和对象的有效重识别；在交互方面，物联网设备平台已经能很好地集成各类设备，但尚缺乏将其整合于增强现实交互之中为用户提供便捷的交互能力的尝试。
 
-本文提出了VSLink，为基于增强现实的交互方案提供了快速的对象识别定位能力和普适交互能力，结合边缘计算以及物联网设备平台，使增强现实技术能实际应用于实时的人机交互，让用户通过手机的屏幕和摄像头即可与现实世界中的对象进行交互。我们在边缘端运行视觉SLAM进行地图的构建和对象的定位，以减少处理延迟，并利用视觉SLAM和目标检测神经网络的互补特性，让它们分别检测静态和动态目标，动态更新地图以实现地图的长期可用性。我们将SLAM获取的检测先验发送到神经网络，使神经网络可以基于检测先验，利用稀疏卷积的方式进行推理加速，以加速目标的重识别。此外，我们还基于物联网设备平台提供了一个UI定制平台，用户可以在其中自定义交互对象/功能/UI布局以定制各类对象在增强现实中可用的交互行为。
+本文提出了VSLink，为基于增强现实的交互方案提供了快速的对象识别定位能力和普适交互能力，结合边缘计算以及物联网设备平台，使增强现实技术能实际应用于实时的人机交互，让用户通过手机的屏幕和摄像头即可与现实世界中的对象进行交互。我们在边缘端运行视觉SLAM进行地图的构建和对象的定位，以减少处理延迟，并利用视觉SLAM和目标检测神经网络的互补特性，让它们分别检测静态和动态目标，动态更新地图以实现地图的长期可用性。我们将VSLAM获取的已知对象区域发送到神经网络，使神经网络可以基于这些可忽略的区域，利用稀疏卷积的方式进行推理加速，以加速对象的重识别。此外，我们还基于物模型和物联网设备平台提供了一个交互界面定制平台，用户可以在其中自定义交互对象/功能/界面布局以定制各类对象在增强现实中可用的交互行为。
 
 我们在一个包含多个交互对象的实验室环境中测试了VSLink。结果表明，该方法能够以30FPS的视频输入进行实时目标定位与识别。我们完成的用户调研和案例验证表明，VSLink能实现灵活的用户定制交互和良好的交互体验。
 
-
-% 在本文中，我们提出了VSLink，它为基于增强现实的交互解决方案提供了快速对象识别和普适交互的能力。我们采用两阶段目标识别方法对交互目标进行快速的定位，并利用视觉SLAM和目标检测神经网络的互补特性，让它们分别检测静态和动态目标。我们将SLAM获取的检测先验发送到神经网络，以便神经网络可以基于检测先验，利用稀疏卷积的方式进行推理加速。此外，我们还提供了一个UI定制平台，用户可以在其中自定义交互目标/功能/UI。我们在一个包含多个交互对象的实验室环境中测试了VSLink。结果表明，该方法能够以30FPS的视频输入进行实时目标识别。
-
-\noindent\textbf{关键字：}物联网，AR，SLAM，稀疏卷积，人机交互
+\noindent\textbf{关键字：}物联网，增强现实，SLAM，稀疏卷积，人机交互
 
 \cleardoublepage
 \chapternonum{Abstract}
-% With the rapid development of the Internet of Things(IoT), people are now surrounded by a large number of devices. According to the prediction of relevant institutions, 82 billion IoT devices will be installed in the whole world in 2025. Therefore, people now have more and more opportunities to interact with these devices. At the same time, human-device interaction technology is also evolving, in the direction of fusing physical and cyber space. Gesture recognition, speech recognition, Bluetooth, Ultra Wide Band and other technologies are used to improve the human-device interaction experience. However, \textit{What You See Is What You Get} is still the most intuitive way of interaction. Augmented reality can intuitively establish a connection between physical and cyber space to provide users with direct interaction. 
 With the rapid development of the Internet of Things(IoT), people are now surrounded by more and more devices. According to the prediction of relevant institutions, 82 billion IoT devices will be installed in the whole world in 2025, thus each person will have more than 10 devices on average. Therefore, people now have more and more opportunities to interact with these devices. At the same time, the existing mainstream human-device interaction methods, such as mobile APPs and smart speakers, can not realize WYSIWYG(\textit{What You See Is What You Get}) human-device interaction. Physical space and cyberspace are still separated. Users can not realize one-to-one device interaction like manipulating physical control panel. 
 
 Augmented reality technology can well integrate physical space and cyberspace to enhance users' interactive experience. Nowadays, augmented reality technology has made great progress in object localization and rendering. However, challenges need to be solved in practical application. In terms of performance, augmented reality technology requires strong computing power, and the high delay needs to be shortened; In terms of practicability, it is necessary to realize the long-term availability of maps and effective re-identification of objects; In terms of interaction, the IoT device platform has been able to integrate many kinds of devices, but there is still a lack of attempt to integrate it into augmented reality interaction to provide users with convenient interaction ability.
-% 本文提出了VSLink，为基于增强现实的交互方案提供了快速的对象识别定位能力和普适交互能力，结合边缘计算以及物联网设备平台，使增强现实技术能实际应用于实时的人机交互，让用户通过手机的屏幕和摄像头即可与现实世界中的对象进行交互。我们在边缘端运行视觉SLAM进行地图的构建和对象的定位，以减少处理延迟，并利用视觉SLAM和目标检测神经网络的互补特性，让它们分别检测静态和动态目标，动态更新地图以实现地图的长期可用性。我们将SLAM获取的检测先验发送到神经网络，使神经网络可以基于检测先验，利用稀疏卷积的方式进行推理加速，以加速目标的重识别。此外，我们还基于物联网设备平台提供了一个UI定制平台，用户可以在其中自定义交互对象/功能/UI布局以定制各类对象在增强现实中可用的交互行为。
 
 In this paper, we propose \textit{VSLink}, which offers fast object identification and localization ability and pervasive interaction for augmented-reality-based interaction solutions. Users can interact with objects in the real world through the screen and camera of their mobile phones.
 We run visual SLAM at the edge to construct the map and locate the object, so as to reduce the processing delay. We make use of the complementary characteristics of visual slam and target detection neural networks to detect static and dynamic targets respectively to dynamically update the map to achieve the long-term availability of the map.
-We send the detection priors obtained by SLAM to the neural networks so that the neural network can accelerate the reasoning by sparse convolution based on the detection priors, so as to accelerate the target re-recognition. In addition, we also provide a UI customization platform based on the IoT device platform, in which users can customize the interactive object/function/UI layout to customize the interactive behavior of various objects available in augmented reality.
-% To improve the processing speed and accuracy, VSLink adopts a two-step object identification method to locate the interaction targets.
-% In this method, visual SLAM and object detection neural networks detect stable/movable objects separately, and detection prior from SLAM is sent to neural networks which enables sparse-convolution-based inference acceleration.
-% VSLink also uses a platform where the user could customize the interaction target, function and interface.
-% 我们在一个包含多个交互对象的实验室环境中测试了VSLink。结果表明，该方法能够以30FPS的视频输入进行实时目标定位与识别。我们完成的用户调研和案例验证表明，VSLink能实现灵活的用户定制交互和较好的交互体验。
+We send the known object regions obtained by VSLAM to the neural network, so that the neural network can accelerate the reasoning by sparse convolution based on these negligible regions, so as to accelerate the object re-recognition.
+In addition, we also provide a UI customization platform based on the object model and IoT device platform, in which users can customize the interactive object/function/layout to customize the interactive behavior of various objects available in augmented reality.
 
 We evaluated VSLink in a laboratory environment containing multiple interactive objects. The results showed that this method can locate and recognize real-time targets with 30 FPS video input. Our user research and case verification showed that VSLink can realize flexible user-customized interaction and a well interactive experience.
-% In this paper, we propose \textit{VSLink}, which offers the ability of fast object identification and pervasive interaction for augmented-reality-based interaction solution. Users can interact with objects in the real world through the screen and camera of their mobile phone.
-% To improve the processing speed and accuracy, VSLink adopts a two-step object identification method to locate the interaction targets.
-% In this method, visual SLAM and object detection neural networks detect stable/movable objects separately, and detection prior from SLAM is sent to neural networks which enables sparse-convolution-based inference acceleration.
-% VSLink also uses a platform where the user could customize the interaction target, function and interface.
-% We evaluated VSLink in an environment containing multiple objects to interact with. 
-% The results showed that it achieves a 33\% network inference acceleration on state-of-the-art neural networks, and enables object identification with 30FPS video input.
 
-\noindent\textbf{Keywords:} Internet of Things, AR, SLAM, Sparse convolution, Human-computer interaction
+\noindent\textbf{Keywords:} Internet of Things, Augmented reality, SLAM, Sparse convolution, Human-computer interaction
